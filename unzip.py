@@ -78,10 +78,7 @@ def load_nzb_list():
     nzb_list = load_obj(tmp_zipinfo)
     if nzb_list:
         now = datetime.datetime.now()
-        for i, n in enumerate(nzb_list):
-            # remove files from the list that were added over 1 day ago
-            if (now - n[8]).days >= 1:
-                del nzb_list[i] 
+        nzb_list[:] = [el for el in nzb_list if (now - el[8]).days < 1]
 
 def get_files(zf):
     zi = zf.infolist()
