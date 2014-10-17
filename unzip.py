@@ -78,10 +78,14 @@ def load_nzb_list():
     nzb_list = load_obj(tmp_zipinfo)
     if nzb_list:
         now = datetime.datetime.now()
+        o_l = len(nzb_list)
         nzb_list[:] = [el for el in nzb_list if (now - el[8]).days < 1]
+        if nzb_list is not None and o_l != len(nzb_list):
+            save_nzb_list()
 
 def get_files(zf):
     zi = zf.infolist()
+    o_l = len(zi)
     zi[:] = [el for el in zi if os.path.splitext(el.filename)[1].lower() == '.nzb']
     return zi
 
@@ -106,20 +110,21 @@ if ext == '.zip':
 
 elif ext == '.nzb' and os.path.exists(tmp_zipinfo):
     load_nzb_list()
-    ni = None
-    f_l = os.path.basename(filename).lower()
-    for i, nf in enumerate(nzb_list):
-        if nf[0].lower() == f_l:
-            ni = i
-            break
-    if ni is not None:
-        print "[NZB] CATEGORY=" + str(nzb_list[ni][1])
-        print "[NZB] PRIORITY=" + str(nzb_list[ni][2])
-        print "[NZB] TOP=" + str(nzb_list[ni][3])
-        print "[NZB] PAUSED=" + str(nzb_list[ni][4])
-        if dupekey is not None:
-            print "[NZB] DUPEKEY=" + str(nzb_list[ni][5])
-            print "[NZB] DUPESCORE=" + str(nzb_list[ni][6])
-            print "[NZB] DUPEMODE=" + str(nzb_list[ni][7])
-        del nzb_list[ni]
-        save_nzb_list()
+    if nzb_list:
+        ni = None
+        f_l = os.path.basename(filename).lower()
+        for i, nf in enumerate(nzb_list):
+            if nf[0].lower() == f_l:
+                ni = i
+                break
+        if ni is not None:
+            print "[NZB] CATEGORY=" + str(nzb_list[ni][1])
+            print "[NZB] PRIORITY=" + str(nzb_list[ni][2])
+            print "[NZB] TOP=" + str(nzb_list[ni][3])
+            print "[NZB] PAUSED=" + str(nzb_list[ni][4])
+            if dupekey is not None:
+                print "[NZB] DUPEKEY=" + str(nzb_list[ni][5])
+                print "[NZB] DUPESCORE=" + str(nzb_list[ni][6])
+                print "[NZB] DUPEMODE=" + str(nzb_list[ni][7])
+            del nzb_list[ni]
+            save_nzb_list()
