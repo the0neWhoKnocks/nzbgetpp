@@ -85,10 +85,7 @@ def load_nzb_list():
 
 def get_files(zf):
     zi = zf.infolist()
-    for i, z in enumerate(zi):
-        # remove non nzb files from the list
-        if os.path.splitext(z.filename)[1].lower() != '.nzb':
-            del zi[i]
+    zi[:] = [el for el in zi if os.path.splitext(el.filename)[1].lower() == '.nzb']
     return zi
 
 if ext == '.zip':
