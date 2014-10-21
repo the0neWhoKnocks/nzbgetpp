@@ -85,7 +85,6 @@ def load_nzb_list():
 
 def get_files(zf):
     zi = zf.infolist()
-    o_l = len(zi)
     zi[:] = [el for el in zi if os.path.splitext(el.filename)[1].lower() == '.nzb']
     return zi
 
