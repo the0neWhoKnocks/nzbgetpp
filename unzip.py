@@ -15,11 +15,20 @@
 import os
 import sys
 import zipfile
+import tarfile
+import gzip
 import pickle
 import datetime
+import re
+
+import struct
+from gzip import FEXTRA, FNAME
 
 filename = os.environ['NZBNP_FILENAME']
-ext = os.path.splitext(filename)[1].lower()
+if re.search(r"\.tar\.gz$", filename, flags=re.I) is None:
+    ext = os.path.splitext(filename)[1].lower()
+else:
+    ext = '.tar.gz'
 cat = os.environ['NZBNP_CATEGORY']
 dir = os.environ['NZBNP_DIRECTORY']
 prio = os.environ['NZBNP_PRIORITY']
@@ -34,9 +43,46 @@ else:
     dupescore = None
     dupemode = None
 
-
 tmp_zipinfo = os.path.join(os.environ.get('NZBOP_TEMPDIR'), r'nzbget\unzip_scan\info')
 nzb_list = []
+
+def read_gzip_info(gzipfile):
+    gf = gzipfile.fileobj
+    pos = gf.tell()
+
+    # Read archive size
+    gf.seek(-4, 2)
+    size = struct.unpack('<I', gf.read())[0]
+
+    gf.seek(0)
+    magic = gf.read(2)
+    if magic != '\037\213':
+        raise IOError, 'Not a gzipped file'
+
+    method, flag, mtime = struct.unpack("<BBIxx", gf.read(8))
+
+    if not flag & FNAME:
+        # Not stored in the header, use the filename sans .gz
+        gf.seek(pos)
+        fname = gzipfile.name
+        if fname.endswith('.gz'):
+            fname = fname[:-3]
+        return fname, size
+
+    if flag & FEXTRA:
+        # Read & discard the extra field, if present
+        gf.read(struct.unpack("<H", gf.read(2)))
+
+    # Read a null-terminated string containing the filename
+    fname = []
+    while True:
+        s = gf.read(1)
+        if not s or s=='\000':
+            break
+        fname.append(s)
+
+    gf.seek(pos)
+    return ''.join(fname), size
 
 def save_obj(obj, name):
     tp = os.path.dirname(name)
@@ -88,6 +134,11 @@ def get_files(zf):
     zi[:] = [el for el in zi if os.path.splitext(el.filename)[1].lower() == '.nzb']
     return zi
 
+def get_tar_files(tf):
+    ti = tf.getmembers()
+    ti[:] = [el for el in ti if el.isfile() and os.path.splitext(el.name)[1].lower() == '.nzb']
+    return ti
+
 if ext == '.zip':
     load_nzb_list()
     zipf = zipfile.ZipFile(filename, mode='r')
@@ -102,6 +153,49 @@ if ext == '.zip':
                 nzb_list = [[z.filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now]]
         save_nzb_list()
     zipf.close()
+
+    try:
+        os.unlink(filename)
+    except:
+        print "Error deleting " + filename
+
+elif ext in ['.tar.gz', '.tar', '.tgz']:
+    load_nzb_list()
+    tarf = tarfile.open(filename, mode='r')
+    tf = get_tar_files(tarf)
+    if tf:
+        tarf.extractall(path = dir, members = tf)
+        now = datetime.datetime.now()
+        for z in tf:
+            if nzb_list:
+                nzb_list.append([z.name, cat, prio, top, pause, dupekey, dupescore, dupemode, now])
+            else:
+                nzb_list = [[z.name, cat, prio, top, pause, dupekey, dupescore, dupemode, now]]
+        save_nzb_list()
+    tarf.close()
+
+    try:
+        os.unlink(filename)
+    except:
+        print "Error deleting " + filename
+
+elif ext == '.gz':
+    load_nzb_list()
+    gzf =gzip.open(filename, mode='rb')
+    out_filename, size = read_gzip_info(gzf)
+    with open(os.path.join(os.path.dirname(filename), out_filename), 'wb') as outf:
+        outf.write( gzf.read() )
+        outf.close()
+
+    if gzf and out_filename:
+        now = datetime.datetime.now()
+        if nzb_list:
+            nzb_list.append([out_filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now])
+        else:
+            nzb_list = [[out_filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now]]
+        save_nzb_list()
+    gzf.close()
+
     try:
         os.unlink(filename)
     except:
