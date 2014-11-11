@@ -17,6 +17,7 @@ import sys
 import zipfile
 import tarfile
 import gzip
+import rarfile.rarfile as rarfile
 import pickle
 import datetime
 import re
@@ -139,6 +140,11 @@ def get_tar_files(tf):
     ti[:] = [el for el in ti if el.isfile() and os.path.splitext(el.name)[1].lower() == '.nzb']
     return ti
 
+def get_rar_files(rf):
+    ri = rf.infolist()
+    ri[:] = [el for el in ri if os.path.splitext(el.filename)[1].lower() == '.nzb']
+    return ri
+
 if ext == '.zip':
     load_nzb_list()
     zipf = zipfile.ZipFile(filename, mode='r')
@@ -195,6 +201,26 @@ elif ext == '.gz':
             nzb_list = [[out_filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now]]
         save_nzb_list()
     gzf.close()
+
+    try:
+        os.unlink(filename)
+    except:
+        print "Error deleting " + filename
+
+elif ext == '.rar':
+    load_nzb_list()
+    rarf = rarfile.RarFile(filename, mode='r')
+    rf = get_files(rarf)
+    if rf:
+        rarf.extractall(path = dir, members = rf)
+        now = datetime.datetime.now()
+        for r in rf:
+            if nzb_list:
+                nzb_list.append([r.filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now])
+            else:
+                nzb_list = [[r.filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now]]
+        save_nzb_list()
+    rarf.close()
 
     try:
         os.unlink(filename)
