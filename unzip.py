@@ -201,7 +201,7 @@ elif ext == '.gz':
             else:
                 nzb_list = [[out_filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now]]
             save_nzb_list()
-        gzf.close()
+    gzf.close()
 
     remove_filename()
 
