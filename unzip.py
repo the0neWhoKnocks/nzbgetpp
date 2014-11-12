@@ -145,6 +145,12 @@ def get_rar_files(rf):
     ri[:] = [el for el in ri if os.path.splitext(el.filename)[1].lower() == '.nzb']
     return ri
 
+def remove_filename():
+    try:
+        os.unlink(filename)
+    except:
+        print "Error deleting " + filename
+
 if ext == '.zip':
     load_nzb_list()
     zipf = zipfile.ZipFile(filename, mode='r')
@@ -160,10 +166,7 @@ if ext == '.zip':
         save_nzb_list()
     zipf.close()
 
-    try:
-        os.unlink(filename)
-    except:
-        print "Error deleting " + filename
+    remove_filename()
 
 elif ext in ['.tar.gz', '.tar', '.tgz']:
     load_nzb_list()
@@ -180,32 +183,27 @@ elif ext in ['.tar.gz', '.tar', '.tgz']:
         save_nzb_list()
     tarf.close()
 
-    try:
-        os.unlink(filename)
-    except:
-        print "Error deleting " + filename
+    remove_filename()
 
 elif ext == '.gz':
     load_nzb_list()
     gzf =gzip.open(filename, mode='rb')
     out_filename, size = read_gzip_info(gzf)
-    with open(os.path.join(os.path.dirname(filename), out_filename), 'wb') as outf:
-        outf.write( gzf.read() )
-        outf.close()
+    if out_filename and os.path.splitext(out_filename)[1].lower() == '.nzb':
+        with open(os.path.join(os.path.dirname(filename), out_filename), 'wb') as outf:
+            outf.write( gzf.read() )
+            outf.close()
+    
+        if gzf and out_filename:
+            now = datetime.datetime.now()
+            if nzb_list:
+                nzb_list.append([out_filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now])
+            else:
+                nzb_list = [[out_filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now]]
+            save_nzb_list()
+        gzf.close()
 
-    if gzf and out_filename:
-        now = datetime.datetime.now()
-        if nzb_list:
-            nzb_list.append([out_filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now])
-        else:
-            nzb_list = [[out_filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now]]
-        save_nzb_list()
-    gzf.close()
-
-    try:
-        os.unlink(filename)
-    except:
-        print "Error deleting " + filename
+    remove_filename()
 
 elif ext == '.rar':
     load_nzb_list()
@@ -222,10 +220,7 @@ elif ext == '.rar':
         save_nzb_list()
     rarf.close()
 
-    try:
-        os.unlink(filename)
-    except:
-        print "Error deleting " + filename
+    remove_filename()
 
 elif ext == '.nzb' and os.path.exists(tmp_zipinfo):
     load_nzb_list()
