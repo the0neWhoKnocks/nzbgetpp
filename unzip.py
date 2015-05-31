@@ -12,17 +12,9 @@
 ### NZBGET SCAN SCRIPT                                          ###
 ##############################################################################
 
-import os
-import sys
-import zipfile
-import tarfile
-import gzip
+import os, zipfile, tarfile, gzip, pickle, datetime, re, struct
 import rarfile.rarfile as rarfile
-import pickle
-import datetime
-import re
 
-import struct
 from gzip import FEXTRA, FNAME
 
 filename = os.environ['NZBNP_FILENAME']
@@ -191,15 +183,15 @@ elif ext == '.gz':
     out_filename, size = read_gzip_info(gzf)
     if out_filename and os.path.splitext(out_filename)[1].lower() == '.nzb':
         with open(os.path.join(os.path.dirname(filename), out_filename), 'wb') as outf:
-            outf.write( gzf.read() )
+            outf.write(gzf.read())
             outf.close()
-    
+
         if gzf and out_filename:
             now = datetime.datetime.now()
             if nzb_list:
-                nzb_list.append([out_filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now])
+                nzb_list.append([os.path.basename(out_filename), cat, prio, top, pause, dupekey, dupescore, dupemode, now])
             else:
-                nzb_list = [[out_filename, cat, prio, top, pause, dupekey, dupescore, dupemode, now]]
+                nzb_list = [[os.path.basename(out_filename), cat, prio, top, pause, dupekey, dupescore, dupemode, now]]
             save_nzb_list()
     gzf.close()
 
@@ -228,7 +220,7 @@ elif ext == '.nzb' and os.path.exists(tmp_zipinfo):
         ni = None
         f_l = os.path.basename(filename).lower()
         for i, nf in enumerate(nzb_list):
-            if nf[0].lower() == f_l:
+            if os.path.basename(nf[0]).lower() == f_l:
                 ni = i
                 break
         if ni is not None:
