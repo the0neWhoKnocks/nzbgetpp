@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/local/bin/python
 #
 ##############################################################################
-### NZBGET SCAN SCRIPT                                          ###
+### NZBGET SCAN SCRIPT                                                     ###
 
 # Unzips zipped nzbs.
 #
@@ -9,7 +9,13 @@
 
 ##############################################################################
 ### OPTIONS                                                                ###
-### NZBGET SCAN SCRIPT                                          ###
+
+# Default category
+#
+# The category you want to be automatically assigned when nzb's are extracted.
+#DefaultCategory=TV
+
+### NZBGET SCAN SCRIPT                                                     ###
 ##############################################################################
 
 import os, zipfile, tarfile, gzip, pickle, datetime, re, struct
@@ -22,7 +28,7 @@ if re.search(r"\.tar\.gz$", filename, flags=re.I) is None:
     ext = os.path.splitext(filename)[1].lower()
 else:
     ext = '.tar.gz'
-cat = os.environ['NZBNP_CATEGORY']
+cat = os.environ['NZBPO_DEFAULTCATEGORY'] #os.environ['NZBNP_CATEGORY']
 dir = os.environ['NZBNP_DIRECTORY']
 prio = os.environ['NZBNP_PRIORITY']
 top = os.environ['NZBNP_TOP']
